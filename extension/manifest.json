@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Replify",
+  "version": "1.0",
+  "description": "Replify Chrome Extension",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "permissions": [
+    "storage",
+    "clipboardWrite"
+  ]
+}
