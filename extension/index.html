@@ -56,6 +56,29 @@
             <div id="results-container">
                 <!-- Generated replies will appear here -->
             </div>
+
+            <!-- History Section -->
+            <div id="history-section">
+                <div class="history-header">
+                    <span class="font-label-md section-title" style="margin-bottom: 0;">Recent Replies</span>
+                    <button id="clear-history-btn" class="history-clear-btn font-label-sm" title="Clear all history">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span>
+                        Clear
+                    </button>
+                </div>
+
+                <!-- Empty State -->
+                <div id="history-empty-state" class="history-empty-state">
+                    <span class="material-symbols-outlined history-empty-icon">forum</span>
+                    <p class="font-label-md history-empty-title">No history yet</p>
+                    <p class="font-body-sm history-empty-desc">Generated replies will appear here so you can re-copy them anytime.</p>
+                </div>
+
+                <!-- History Items Container -->
+                <div id="history-list">
+                    <!-- History sessions rendered by JS -->
+                </div>
+            </div>
         </main>
 
         <main id="settings-view" style="display: none;">

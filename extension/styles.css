@@ -462,3 +462,203 @@ input:checked+.toggle-bg .toggle-thumb {
         transform: rotate(360deg);
     }
 }
+
+/* ---- History Section ---- */
+
+#history-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.history-clear-btn {
+    background: transparent;
+    border: 1px solid var(--outline-variant);
+    color: var(--outline);
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    letter-spacing: 0.04em;
+}
+
+.history-clear-btn:hover {
+    border-color: #c94040;
+    color: #c94040;
+    background: rgba(201, 64, 64, 0.08);
+}
+
+/* Empty state */
+.history-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 16px;
+    text-align: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.history-empty-icon {
+    font-size: 36px;
+    color: var(--outline-variant);
+    margin-bottom: 4px;
+    opacity: 0.7;
+}
+
+.history-empty-title {
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+}
+
+.history-empty-desc {
+    color: var(--outline);
+    max-width: 220px;
+    line-height: 1.5;
+}
+
+/* Session card */
+.history-session {
+    background: var(--surface-dim);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.history-session:hover {
+    border-color: var(--outline);
+}
+
+.history-session-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    gap: 8px;
+}
+
+.history-session-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+
+.history-tone-badge {
+    font: 600 9px/12px 'Geist', sans-serif;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    background: rgba(16, 151, 235, 0.12);
+    color: var(--secondary-container);
+    border: 1px solid rgba(16, 151, 235, 0.25);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.history-session-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.history-session-url {
+    color: var(--on-surface-variant);
+    font: 500 10px/14px 'Inter', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.history-session-time {
+    color: var(--outline);
+    font: 400 10px/13px 'Inter', sans-serif;
+}
+
+.history-session-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.history-count-badge {
+    font: 600 10px/14px 'Geist', sans-serif;
+    color: var(--on-surface-variant);
+    background: var(--surface-container-highest);
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+}
+
+.history-chevron {
+    font-size: 18px;
+    color: var(--outline);
+    transition: transform 0.2s;
+}
+
+.history-session.expanded .history-chevron {
+    transform: rotate(180deg);
+}
+
+/* Replies list inside a session */
+.history-session-replies {
+    display: none;
+    flex-direction: column;
+    gap: 1px;
+    border-top: 1px solid var(--outline-variant);
+}
+
+.history-session.expanded .history-session-replies {
+    display: flex;
+}
+
+.history-session-reply-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--surface-container-lowest);
+    transition: background 0.15s;
+}
+
+.history-session-reply-row:not(:last-child) {
+    border-bottom: 1px solid rgba(76, 69, 70, 0.4);
+}
+
+.history-session-reply-row:hover {
+    background: rgba(20, 26, 30, 0.8);
+}
+
+.history-reply-text {
+    color: var(--on-surface);
+    flex: 1;
+    line-height: 1.5;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.history-session {
+    animation: fadeInUp 0.2s ease forwards;
+}
