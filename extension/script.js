@@ -1,168 +1,139 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM References ---
-    const variationsSlider = document.getElementById('variations-slider');
-    const variationsVal    = document.getElementById('variations-val');
-    const settingsView     = document.getElementById('settings-view');
-    const generatorView    = document.getElementById('generator-view');
-    const headerGeneratorBtn   = document.getElementById('header-settings-btn');
-    const headerPreferencesBtn = document.getElementById('header-preferences-btn');
-    const generateBtn      = document.getElementById('generate-btn');
-    const urlInput         = document.getElementById('x-post-url');
-    const loadingSpinner   = document.getElementById('loading-spinner');
-    const resultsContainer = document.getElementById('results-container');
-    const saveSettingsBtn  = document.getElementById('save-settings-btn');
-    const clearHistoryBtn  = document.getElementById('clear-history-btn');
-    const historyList      = document.getElementById('history-list');
-    const historyEmptyState = document.getElementById('history-empty-state');
+    // --- DOM refs ---
+    const $ = (s) => document.getElementById(s);
+    const variationsSlider = $('variations-slider');
+    const variationsVal    = $('variations-val');
+    const settingsView     = $('settings-view');
+    const generatorView    = $('generator-view');
+    const generateBtn      = $('generate-btn');
+    const urlInput         = $('x-post-url');
+    const loadingSpinner   = $('loading-spinner');
+    const resultsContainer = $('results-container');
+    const saveSettingsBtn  = $('save-settings-btn');
+    const clearHistoryBtn  = $('clear-history-btn');
+    const historyList      = $('history-list');
+    const historyEmpty     = $('history-empty-state');
+    const noPostMessage    = $('no-post-message');
+    const toneSelect       = $('tone-select');
+    const lengthSelect     = $('length-select');
+    const instrTextarea    = $('instructions-textarea');
+    const emojiToggle      = document.querySelector('.toggle-wrapper input');
 
-    // Settings elements
-    const toneSelect          = document.getElementById('tone-select');
-    const lengthSelect        = document.getElementById('length-select');
-    const instructionsTextarea = document.getElementById('instructions-textarea');
-    const emojiToggle         = document.querySelector('.toggle-wrapper input');
-
-    // ─── Storage Abstraction ─────────────────────────────────────────────────
-    function getStorage() {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    // --- Storage ---
+    const storage = (() => {
+        if (typeof chrome !== 'undefined' && chrome.storage?.local) {
             return {
-                get: (key) => new Promise((resolve) => {
-                    chrome.storage.local.get([key], (result) => resolve(result[key]));
-                }),
-                set: (key, value) => new Promise((resolve) => {
-                    chrome.storage.local.set({ [key]: value }, resolve);
-                })
+                get: k => new Promise(r => chrome.storage.local.get([k], res => r(res[k]))),
+                set: (k, v) => new Promise(r => chrome.storage.local.set({ [k]: v }, r))
             };
         }
         return {
-            get: (key) => {
-                try { return Promise.resolve(JSON.parse(localStorage.getItem(key))); }
-                catch { return Promise.resolve(null); }
-            },
-            set: (key, value) => {
-                localStorage.setItem(key, JSON.stringify(value));
-                return Promise.resolve();
-            }
+            get: k => { try { return Promise.resolve(JSON.parse(localStorage.getItem(k))); } catch { return Promise.resolve(null); } },
+            set: (k, v) => { localStorage.setItem(k, JSON.stringify(v)); return Promise.resolve(); }
         };
-    }
-    const storage = getStorage();
+    })();
 
     const SETTINGS_KEY = 'replify_settings';
     const HISTORY_KEY  = 'replify_history';
-    const MAX_HISTORY  = 10; // max sessions to keep
+    const MAX_HISTORY  = 10;
 
-    // ─── Slider ─────────────────────────────────────────────────────────────
-    if (variationsSlider && variationsVal) {
-        variationsSlider.addEventListener('input', (e) => {
-            variationsVal.textContent = e.target.value;
-        });
+    // --- Helpers ---
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+    function show(el) { if (el) el.style.display = 'flex'; }
+    function hide(el) { if (el) el.style.display = 'none'; }
+
+    async function copyText(btn, text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            const icon = btn.querySelector('.material-symbols-outlined');
+            icon.textContent = 'check';
+            setTimeout(() => { icon.textContent = 'content_copy'; }, 2000);
+        } catch (e) { console.error('Copy failed:', e); }
     }
 
-    // ─── View Toggling ───────────────────────────────────────────────────────
-    function hideAllViews() {
-        settingsView.style.display = 'none';
-        generatorView.style.display = 'none';
-    }
+    // --- Slider ---
+    variationsSlider?.addEventListener('input', e => { variationsVal.textContent = e.target.value; });
 
-    headerPreferencesBtn?.addEventListener('click', () => {
-        hideAllViews();
-        settingsView.style.display = 'flex';
-    });
+    // --- View toggle ---
+    $('header-preferences-btn')?.addEventListener('click', () => { hide(generatorView); show(settingsView); });
+    $('header-settings-btn')?.addEventListener('click', () => { hide(settingsView); show(generatorView); });
 
-    headerGeneratorBtn?.addEventListener('click', () => {
-        hideAllViews();
-        generatorView.style.display = 'flex';
-    });
-
-    // ─── Settings Persistence ────────────────────────────────────────────────
+    // --- Settings ---
     async function loadSettings() {
         try {
             const s = await storage.get(SETTINGS_KEY);
             if (!s) return;
-            if (s.tone && toneSelect)                   toneSelect.value = s.tone;
+            if (s.tone && toneSelect)          toneSelect.value = s.tone;
             if (s.numVariations && variationsSlider) {
                 variationsSlider.value = s.numVariations;
                 if (variationsVal) variationsVal.textContent = s.numVariations;
             }
-            if (s.length && lengthSelect)               lengthSelect.value = s.length;
-            if (s.instructions !== undefined && instructionsTextarea)
-                                                        instructionsTextarea.value = s.instructions;
-            if (s.emoji !== undefined && emojiToggle)   emojiToggle.checked = s.emoji;
-        } catch (err) {
-            console.error('Failed to load settings:', err);
-        }
+            if (s.length && lengthSelect)      lengthSelect.value = s.length;
+            if (s.instructions !== undefined && instrTextarea) instrTextarea.value = s.instructions;
+            if (s.emoji !== undefined && emojiToggle) emojiToggle.checked = s.emoji;
+        } catch (e) { console.error('Failed to load settings:', e); }
     }
 
     async function saveSettings() {
         const s = {
-            tone:          toneSelect?.value          || 'professional',
-            numVariations: variationsSlider?.value    || '3',
-            length:        lengthSelect?.value        || 'short',
-            instructions:  instructionsTextarea?.value || '',
-            emoji:         emojiToggle ? emojiToggle.checked : true
+            tone: toneSelect?.value || 'professional',
+            numVariations: variationsSlider?.value || '3',
+            length: lengthSelect?.value || 'short',
+            instructions: instrTextarea?.value || '',
+            emoji: emojiToggle ? emojiToggle.checked : true
         };
         try {
             await storage.set(SETTINGS_KEY, s);
             if (saveSettingsBtn) {
                 saveSettingsBtn.innerHTML = '<span class="material-symbols-outlined">check</span> Saved!';
-                setTimeout(() => {
-                    saveSettingsBtn.innerHTML = '<span class="material-symbols-outlined">save</span> Save Settings';
-                }, 1500);
+                setTimeout(() => { saveSettingsBtn.innerHTML = '<span class="material-symbols-outlined">save</span> Save Settings'; }, 1500);
             }
-        } catch (err) {
-            console.error('Failed to save settings:', err);
-        }
+        } catch (e) { console.error('Failed to save settings:', e); }
     }
 
     saveSettingsBtn?.addEventListener('click', saveSettings);
     loadSettings();
 
-    // ─── History Helpers ─────────────────────────────────────────────────────
-    function formatRelativeTime(ts) {
-        const diff = Date.now() - ts;
-        const mins  = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days  = Math.floor(diff / 86400000);
-        if (mins < 1)    return 'Just now';
-        if (mins < 60)   return `${mins}m ago`;
-        if (hours < 24)  return `${hours}h ago`;
-        return `${days}d ago`;
+    // --- History ---
+    function relTime(ts) {
+        const d = Date.now() - ts;
+        const m = Math.floor(d / 60000), h = Math.floor(d / 3600000), dy = Math.floor(d / 86400000);
+        if (m < 1) return 'Just now';
+        if (m < 60) return m + 'm ago';
+        if (h < 24) return h + 'h ago';
+        return dy + 'd ago';
     }
 
-    function shortenUrl(url) {
+    function shortUrl(url) {
         try {
-            const u = new URL(url);
-            // "x.com/handle/status/123…"
-            const parts = u.pathname.split('/').filter(Boolean);
-            if (parts.length >= 3) return `@${parts[0]}`;
-            return u.hostname;
-        } catch {
-            return url.slice(0, 30);
-        }
+            const parts = new URL(url).pathname.split('/').filter(Boolean);
+            return parts.length >= 3 ? '@' + parts[0] : new URL(url).hostname;
+        } catch { return url.slice(0, 30); }
     }
 
-    function buildSessionCard(session) {
+    function buildCard(session) {
         const card = document.createElement('div');
         card.className = 'history-session';
         card.dataset.id = session.id;
 
-        const repliesHtml = session.replies.map((reply, i) => `
+        const replies = session.replies.map(r => `
             <div class="history-session-reply-row">
-                <span class="font-body-sm history-reply-text">${escapeHtml(reply)}</span>
+                <span class="font-body-sm history-reply-text">${esc(r)}</span>
                 <div class="history-actions">
-                    <button class="action-icon-btn copy-btn-hist" data-reply="${encodeURIComponent(reply)}" title="Copy">
+                    <button class="action-icon-btn copy-btn" data-reply="${encodeURIComponent(r)}" title="Copy">
                         <span class="material-symbols-outlined">content_copy</span>
                     </button>
                 </div>
-            </div>
-        `).join('');
+            </div>`).join('');
 
         card.innerHTML = `
             <div class="history-session-header">
                 <div class="history-session-meta">
-                    <span class="history-tone-badge">${escapeHtml(session.tone)}</span>
+                    <span class="history-tone-badge">${esc(session.tone)}</span>
                     <div class="history-session-info">
-                        <span class="history-session-url">${escapeHtml(shortenUrl(session.postUrl))}</span>
-                        <span class="history-session-time">${formatRelativeTime(session.id)}</span>
+                        <span class="history-session-url">${esc(shortUrl(session.postUrl))}</span>
+                        <span class="history-session-time">${relTime(session.id)}</span>
                     </div>
                 </div>
                 <div class="history-session-right">
@@ -170,281 +141,145 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="material-symbols-outlined history-chevron">expand_more</span>
                 </div>
             </div>
-            <div class="history-session-replies">
-                ${repliesHtml}
-            </div>
-        `;
+            <div class="history-session-replies">${replies}</div>`;
 
-        // Toggle expand/collapse
-        card.querySelector('.history-session-header').addEventListener('click', () => {
-            card.classList.toggle('expanded');
+        card.querySelector('.history-session-header').addEventListener('click', () => card.classList.toggle('expanded'));
+        card.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', e => { e.stopPropagation(); copyText(btn, decodeURIComponent(btn.dataset.reply)); });
         });
-
-        // Copy buttons
-        card.querySelectorAll('.copy-btn-hist').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const text = decodeURIComponent(e.currentTarget.getAttribute('data-reply'));
-                try {
-                    await navigator.clipboard.writeText(text);
-                    const icon = e.currentTarget.querySelector('.material-symbols-outlined');
-                    icon.textContent = 'check';
-                    setTimeout(() => { icon.textContent = 'content_copy'; }, 2000);
-                } catch (err) {
-                    console.error('Copy failed:', err);
-                }
-            });
-        });
-
         return card;
-    }
-
-    function escapeHtml(str) {
-        return str
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
     }
 
     function renderHistory(sessions) {
         historyList.innerHTML = '';
-        const isEmpty = !sessions || sessions.length === 0;
-        historyEmptyState.style.display = isEmpty ? 'flex' : 'none';
-        clearHistoryBtn.style.display   = isEmpty ? 'none' : 'flex';
-        if (isEmpty) return;
-
-        // Most recent first
-        [...sessions].reverse().forEach(session => {
-            historyList.appendChild(buildSessionCard(session));
-        });
+        const empty = !sessions?.length;
+        historyEmpty.style.display = empty ? 'flex' : 'none';
+        clearHistoryBtn.style.display = empty ? 'none' : 'flex';
+        if (!empty) [...sessions].reverse().forEach(s => historyList.appendChild(buildCard(s)));
     }
 
-    async function loadHistory() {
-        const sessions = await storage.get(HISTORY_KEY) || [];
-        renderHistory(sessions);
-    }
+    async function loadHistory() { renderHistory(await storage.get(HISTORY_KEY) || []); }
 
     async function saveToHistory(session) {
         let sessions = await storage.get(HISTORY_KEY) || [];
         sessions.push(session);
-        // Keep only the latest MAX_HISTORY entries
-        if (sessions.length > MAX_HISTORY) {
-            sessions = sessions.slice(sessions.length - MAX_HISTORY);
-        }
+        if (sessions.length > MAX_HISTORY) sessions = sessions.slice(-MAX_HISTORY);
         await storage.set(HISTORY_KEY, sessions);
         renderHistory(sessions);
     }
 
-    clearHistoryBtn?.addEventListener('click', async () => {
-        await storage.set(HISTORY_KEY, []);
-        renderHistory([]);
-    });
-
+    clearHistoryBtn?.addEventListener('click', async () => { await storage.set(HISTORY_KEY, []); renderHistory([]); });
     loadHistory();
 
-    // ─── Auto-Detect Post URL from Active Tab ────────────────────────────────
-    /**
-     * When the popup opens, check if the active tab is an X/Twitter post page.
-     * If so, automatically fill in the URL input and enable generation.
-     * If not, show a helper message — manual entry is not allowed.
-     */
-    const noPostMessage = document.getElementById('no-post-message');
-
-    async function autoDetectPostUrl() {
-        if (typeof chrome === 'undefined' || !chrome.tabs) {
-            // Not running as extension (e.g. local dev) — show no-post message
-            if (noPostMessage) noPostMessage.style.display = 'flex';
-            return;
-        }
-
+    // --- Auto-detect post URL ---
+    async function autoDetect() {
+        if (typeof chrome === 'undefined' || !chrome.tabs) { show(noPostMessage); return; }
         try {
-            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (!activeTab || !activeTab.url) {
-                if (noPostMessage) noPostMessage.style.display = 'flex';
-                return;
-            }
-
-            const url = activeTab.url;
-            // Check if it's an X/Twitter post URL (must contain /status/ to be a specific post)
-            const isPostUrl = (url.includes('x.com/') || url.includes('twitter.com/')) &&
-                              url.includes('/status/');
-
-            if (isPostUrl && urlInput) {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab?.url) { show(noPostMessage); return; }
+            const url = tab.url;
+            if ((url.includes('x.com/') || url.includes('twitter.com/')) && url.includes('/status/')) {
                 urlInput.value = url;
                 urlInput.classList.add('auto-detected');
                 if (generateBtn) generateBtn.disabled = false;
-                if (noPostMessage) noPostMessage.style.display = 'none';
-
-                // Show a subtle auto-detected indicator
-                const indicator = document.createElement('div');
-                indicator.className = 'auto-detect-badge font-label-sm';
-                indicator.innerHTML = '<span class="material-symbols-outlined" style="font-size: 14px;">link</span> Auto-detected from active tab';
-                urlInput.parentElement.insertBefore(indicator, urlInput.nextSibling);
+                hide(noPostMessage);
+                const badge = document.createElement('div');
+                badge.className = 'auto-detect-badge font-label-sm';
+                badge.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px">link</span> Auto-detected from active tab';
+                urlInput.parentElement.insertBefore(badge, urlInput.nextSibling);
             } else {
-                // Active tab is not an X post — show helper message
-                if (noPostMessage) noPostMessage.style.display = 'flex';
+                show(noPostMessage);
                 if (generateBtn) generateBtn.disabled = true;
             }
-        } catch (err) {
-            console.warn('Auto-detect post URL failed:', err);
-            if (noPostMessage) noPostMessage.style.display = 'flex';
-        }
+        } catch (e) { console.warn('Auto-detect failed:', e); show(noPostMessage); }
     }
+    autoDetect();
 
-    autoDetectPostUrl();
-
-    // ─── Tweet Scraping via Content Script ────────────────────────────────────
-    /**
-     * Extracts tweet text from the active X/Twitter tab by injecting a script.
-     * Returns the tweet text string, or null if extraction fails.
-     */
-    async function extractTweetFromTab(postUrl) {
-        // Only works in extension context
-        if (typeof chrome === 'undefined' || !chrome.scripting || !chrome.tabs) {
-            return null;
-        }
-
+    // --- Tweet scraping ---
+    async function extractTweet(postUrl) {
+        if (typeof chrome === 'undefined' || !chrome.scripting || !chrome.tabs) return null;
         try {
-            // Find the X/Twitter tab that matches the URL
             const tabs = await chrome.tabs.query({ url: ['https://x.com/*', 'https://twitter.com/*'] });
-            
-            // Try to find a tab whose URL matches the provided post URL
-            let targetTab = tabs.find(t => t.url && t.url.includes(postUrl));
-            
-            // If no exact match, try matching by tweet ID
-            if (!targetTab) {
-                const match = postUrl.match(/status\/(\d+)/);
-                if (match) {
-                    const tweetId = match[1];
-                    targetTab = tabs.find(t => t.url && t.url.includes(tweetId));
-                }
+            let tab = tabs.find(t => t.url?.includes(postUrl));
+            if (!tab) {
+                const m = postUrl.match(/status\/(\d+)/);
+                if (m) tab = tabs.find(t => t.url?.includes(m[1]));
             }
-
-            // If still no matching tab, use the active tab if it's an X page
-            if (!targetTab) {
-                const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                if (activeTab && activeTab.url && (activeTab.url.includes('x.com') || activeTab.url.includes('twitter.com'))) {
-                    targetTab = activeTab;
-                }
+            if (!tab) {
+                const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (active?.url && (active.url.includes('x.com') || active.url.includes('twitter.com'))) tab = active;
             }
+            if (!tab) return null;
 
-            if (!targetTab) return null;
-
-            // Inject script to extract tweet text from the page
             const results = await chrome.scripting.executeScript({
-                target: { tabId: targetTab.id },
+                target: { tabId: tab.id },
                 func: () => {
-                    // Try to find the main tweet text from the article
-                    const tweetTextEl = document.querySelector('article[data-testid="tweet"] div[data-testid="tweetText"]');
-                    if (tweetTextEl) {
-                        return tweetTextEl.innerText;
-                    }
-                    // Fallback: try meta description
-                    const metaDesc = document.querySelector('meta[property="og:description"]');
-                    if (metaDesc) {
-                        return metaDesc.content;
-                    }
-                    return null;
+                    const el = document.querySelector('article[data-testid="tweet"] div[data-testid="tweetText"]');
+                    if (el) return el.innerText;
+                    const meta = document.querySelector('meta[property="og:description"]');
+                    return meta?.content || null;
                 }
             });
-
-            if (results && results[0] && results[0].result) {
-                return results[0].result;
-            }
-        } catch (err) {
-            console.warn('Failed to extract tweet from tab:', err);
-        }
-        return null;
+            return results?.[0]?.result || null;
+        } catch (e) { console.warn('Tweet extraction failed:', e); return null; }
     }
 
-    // ─── Generator Logic ─────────────────────────────────────────────────────
+    // --- Generate ---
     generateBtn?.addEventListener('click', async () => {
         const postUrl = urlInput.value.trim();
-        if (!postUrl) return; // Safety guard — button should already be disabled
+        if (!postUrl) return;
 
-        const tone         = toneSelect?.value           || 'professional';
+        const tone = toneSelect?.value || 'professional';
         const numVariations = parseInt(variationsSlider?.value || '3', 10);
-        const length       = lengthSelect?.value         || 'short';
-        const instructions = instructionsTextarea?.value || '';
-        const includeEmoji = emojiToggle ? emojiToggle.checked : true;
+        const length = lengthSelect?.value || 'short';
+        const instructions = instrTextarea?.value || '';
+        const emoji = emojiToggle ? emojiToggle.checked : true;
 
         resultsContainer.innerHTML = '';
         loadingSpinner.style.display = 'block';
         generateBtn.disabled = true;
 
         try {
-            // Try to extract tweet text from the browser tab first
-            let postText = await extractTweetFromTab(postUrl);
-
-            const response = await fetch('http://127.0.0.1:8000/generate-replies', {
+            const postText = await extractTweet(postUrl);
+            const res = await fetch('http://127.0.0.1:8000/generate-replies', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    post_url:            postText ? '' : postUrl,
-                    post_text:           postText || '',
-                    tone,
-                    num_variations:      numVariations,
-                    length,
-                    custom_instructions: instructions,
-                    emoji:               includeEmoji
+                    post_url: postText ? '' : postUrl,
+                    post_text: postText || '',
+                    tone, num_variations: numVariations, length,
+                    custom_instructions: instructions, emoji
                 })
             });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.detail || response.statusText);
+            if (!res.ok) {
+                const err = await res.json().catch(() => null);
+                throw new Error(err?.detail || res.statusText);
             }
+            const replies = (await res.json()).replies || [];
+            hide(loadingSpinner);
 
-            const data    = await response.json();
-            const replies = data.replies || [];
-
-            loadingSpinner.style.display = 'none';
-
-            // Render fresh reply cards
-            replies.forEach((reply) => {
+            replies.forEach(reply => {
                 const card = document.createElement('div');
                 card.className = 'history-item';
-                card.style.marginBottom = '12px';
                 card.innerHTML = `
-                    <div class="font-body-sm history-reply">${escapeHtml(reply)}</div>
+                    <div class="font-body-sm history-reply">${esc(reply)}</div>
                     <div class="history-actions">
-                        <button class="action-icon-btn copy-btn-gen" data-reply="${encodeURIComponent(reply)}" title="Copy">
+                        <button class="action-icon-btn copy-btn" data-reply="${encodeURIComponent(reply)}" title="Copy">
                             <span class="material-symbols-outlined">content_copy</span>
                         </button>
-                    </div>
-                `;
+                    </div>`;
                 resultsContainer.appendChild(card);
             });
 
-            // Wire copy buttons for fresh results
-            resultsContainer.querySelectorAll('.copy-btn-gen').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const text = decodeURIComponent(e.currentTarget.getAttribute('data-reply'));
-                    try {
-                        await navigator.clipboard.writeText(text);
-                        const icon = e.currentTarget.querySelector('.material-symbols-outlined');
-                        icon.textContent = 'check';
-                        setTimeout(() => { icon.textContent = 'content_copy'; }, 2000);
-                    } catch (err) {
-                        console.error('Copy failed:', err);
-                    }
-                });
+            resultsContainer.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => copyText(btn, decodeURIComponent(btn.dataset.reply)));
             });
 
-            // Persist to history
-            await saveToHistory({
-                id:      Date.now(),
-                postUrl,
-                tone,
-                replies
-            });
-
-        } catch (err) {
-            console.error(err);
+            await saveToHistory({ id: Date.now(), postUrl, tone, replies });
+        } catch (e) {
+            console.error(e);
             alert('Failed to generate replies. Make sure the server is running and the link is valid.');
-            loadingSpinner.style.display = 'none';
+            hide(loadingSpinner);
         } finally {
             generateBtn.disabled = false;
         }

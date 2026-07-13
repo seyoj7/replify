@@ -1,29 +1,20 @@
 <!DOCTYPE html>
 <html class="dark" lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Replify</title>
-    <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet">
-
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-    <!-- Extension Container (Constrained Width) -->
     <div class="app-container">
-        <!-- TopAppBar -->
         <header>
             <button class="icon-button" id="header-settings-btn">
-                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">auto_awesome</span>
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 0">auto_awesome</span>
             </button>
             <h1 class="font-headline-sm">Replify</h1>
             <button class="icon-button" id="header-preferences-btn">
@@ -31,67 +22,52 @@
             </button>
         </header>
 
-        <!-- Generator View -->
         <main id="generator-view">
-            <div class="generator-container" style="padding: 16px; background-color: var(--surface-container-low); border-radius: 12px; border: 1px solid var(--outline-variant); margin-bottom: 16px;">
-                <h2 class="font-label-md section-title" style="margin-bottom: 12px;">Generate Replies</h2>
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="font-label-sm" for="x-post-url" style="display: block; margin-bottom: 8px;">X (Twitter) Post Link</label>
-                    <input type="url" id="x-post-url" class="font-body-sm text-input" readonly placeholder="Open a post on X to auto-detect..." style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--outline-variant); background-color: var(--surface-container); color: var(--on-surface); box-sizing: border-box; outline: none; transition: border-color 0.2s; cursor: default;" />
-                    <div id="no-post-message" class="no-post-message font-label-sm" style="display: none;">
-                        <span class="material-symbols-outlined" style="font-size: 14px;">info</span>
+            <div class="generator-container">
+                <h2 class="font-label-md section-title">Generate Replies</h2>
+                <div class="form-group mb">
+                    <label class="font-label-sm" for="x-post-url">X (Twitter) Post Link</label>
+                    <input type="url" id="x-post-url" class="font-body-sm text-input" readonly placeholder="Open a post on X to auto-detect...">
+                    <div id="no-post-message" class="no-post-message font-label-sm" style="display:none">
+                        <span class="material-symbols-outlined" style="font-size:14px">info</span>
                         Navigate to a post on X, then open Replify
                     </div>
                 </div>
-                
                 <div class="action-button-container">
-                    <button id="generate-btn" class="action-button font-label-md" style="width: 100%;" disabled>
+                    <button id="generate-btn" class="action-button font-label-md" disabled>
                         <span class="material-symbols-outlined">auto_awesome</span>
                         Generate Replies
                     </button>
                 </div>
             </div>
 
-            <div id="loading-spinner" style="display: none; text-align: center; padding: 24px 0;">
-                <span class="material-symbols-outlined" style="animation: spin 1s linear infinite; font-size: 24px; color: var(--primary);">sync</span>
-                <p class="font-body-sm" style="margin-top: 8px; color: var(--on-surface-variant);">Fetching post & generating...</p>
-            </div>
-            
-            <div id="results-container">
-                <!-- Generated replies will appear here -->
+            <div id="loading-spinner" class="loading-spinner">
+                <span class="material-symbols-outlined">sync</span>
+                <p class="font-body-sm">Fetching post &amp; generating...</p>
             </div>
 
-            <!-- History Section -->
+            <div id="results-container"></div>
+
             <div id="history-section">
                 <div class="history-header">
-                    <span class="font-label-md section-title" style="margin-bottom: 0;">Recent Replies</span>
+                    <span class="font-label-md section-title" style="margin-bottom:0">Recent Replies</span>
                     <button id="clear-history-btn" class="history-clear-btn font-label-sm" title="Clear all history">
-                        <span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span>
+                        <span class="material-symbols-outlined" style="font-size:14px">delete_sweep</span>
                         Clear
                     </button>
                 </div>
-
-                <!-- Empty State -->
                 <div id="history-empty-state" class="history-empty-state">
                     <span class="material-symbols-outlined history-empty-icon">forum</span>
                     <p class="font-label-md history-empty-title">No history yet</p>
                     <p class="font-body-sm history-empty-desc">Generated replies will appear here so you can re-copy them anytime.</p>
                 </div>
-
-                <!-- History Items Container -->
-                <div id="history-list">
-                    <!-- History sessions rendered by JS -->
-                </div>
+                <div id="history-list"></div>
             </div>
         </main>
 
-        <main id="settings-view" style="display: none;">
-            <h2 class="font-label-md section-title" style="margin-bottom: 8px;">Preferences</h2>
-
-            <!-- Settings Card Form -->
+        <main id="settings-view" style="display:none">
+            <h2 class="font-label-md section-title">Preferences</h2>
             <div class="settings-card">
-
-                <!-- Tone Dropdown -->
                 <div class="form-group">
                     <label class="font-label-sm" for="tone-select">Tone</label>
                     <div class="select-wrapper">
@@ -107,8 +83,6 @@
                         <span class="material-symbols-outlined select-icon">expand_more</span>
                     </div>
                 </div>
-
-                <!-- Number of Variations -->
                 <div class="form-group">
                     <div class="slider-header">
                         <label class="font-label-sm" for="variations-slider">Variations per Generation</label>
@@ -118,8 +92,6 @@
                         <input id="variations-slider" max="5" min="1" type="range" value="3">
                     </div>
                 </div>
-
-                <!-- Reply Length -->
                 <div class="form-group">
                     <label class="font-label-sm" for="length-select">Reply Length</label>
                     <div class="select-wrapper">
@@ -131,23 +103,16 @@
                         <span class="material-symbols-outlined select-icon">expand_more</span>
                     </div>
                 </div>
-
-                <!-- Custom Instructions -->
                 <div class="form-group">
                     <label class="font-label-sm" for="instructions-textarea">
                         Custom Context
-                        <span class="material-symbols-outlined info-icon"
-                            style="font-variation-settings: 'FILL' 1;">info</span>
+                        <span class="material-symbols-outlined info-icon" style="font-variation-settings:'FILL' 1">info</span>
                     </label>
                     <textarea id="instructions-textarea" class="font-body-sm"
                         placeholder="e.g. Never use hashtags. Always agree with the original poster first."
                         rows="3"></textarea>
                 </div>
-
-                <!-- Divider -->
                 <div class="divider"></div>
-
-                <!-- Emoji Toggle -->
                 <label class="toggle-label">
                     <div class="toggle-text-container">
                         <span class="font-label-md toggle-title">Include Emojis</span>
@@ -155,14 +120,10 @@
                     </div>
                     <div class="toggle-wrapper">
                         <input class="sr-only" type="checkbox" checked>
-                        <div class="toggle-bg">
-                            <div class="toggle-thumb"></div>
-                        </div>
+                        <div class="toggle-bg"><div class="toggle-thumb"></div></div>
                     </div>
                 </label>
             </div>
-
-            <!-- Action Button -->
             <div class="action-button-container">
                 <button id="save-settings-btn" class="action-button font-label-md">
                     <span class="material-symbols-outlined">save</span>
@@ -170,11 +131,7 @@
                 </button>
             </div>
         </main>
-
-
     </div>
-
     <script src="script.js"></script>
 </body>
-
 </html>
