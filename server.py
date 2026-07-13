@@ -102,7 +102,7 @@ async def generate_replies(request: GenerateRepliesRequest):
     }
 
     payload = {
-        "model": "meta/llama-3.1-70b-instruct",
+        "model": "meta/llama-3.1-8b-instruct",
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Post: {post_content}"}
