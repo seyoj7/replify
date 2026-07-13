@@ -244,6 +244,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadHistory();
 
+    // ─── Auto-Detect Post URL from Active Tab ────────────────────────────────
+    /**
+     * When the popup opens, check if the active tab is an X/Twitter post page.
+     * If so, automatically fill in the URL input and enable generation.
+     * If not, show a helper message — manual entry is not allowed.
+     */
+    const noPostMessage = document.getElementById('no-post-message');
+
+    async function autoDetectPostUrl() {
+        if (typeof chrome === 'undefined' || !chrome.tabs) {
+            // Not running as extension (e.g. local dev) — show no-post message
+            if (noPostMessage) noPostMessage.style.display = 'flex';
+            return;
+        }
+
+        try {
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!activeTab || !activeTab.url) {
+                if (noPostMessage) noPostMessage.style.display = 'flex';
+                return;
+            }
+
+            const url = activeTab.url;
+            // Check if it's an X/Twitter post URL (must contain /status/ to be a specific post)
+            const isPostUrl = (url.includes('x.com/') || url.includes('twitter.com/')) &&
+                              url.includes('/status/');
+
+            if (isPostUrl && urlInput) {
+                urlInput.value = url;
+                urlInput.classList.add('auto-detected');
+                if (generateBtn) generateBtn.disabled = false;
+                if (noPostMessage) noPostMessage.style.display = 'none';
+
+                // Show a subtle auto-detected indicator
+                const indicator = document.createElement('div');
+                indicator.className = 'auto-detect-badge font-label-sm';
+                indicator.innerHTML = '<span class="material-symbols-outlined" style="font-size: 14px;">link</span> Auto-detected from active tab';
+                urlInput.parentElement.insertBefore(indicator, urlInput.nextSibling);
+            } else {
+                // Active tab is not an X post — show helper message
+                if (noPostMessage) noPostMessage.style.display = 'flex';
+                if (generateBtn) generateBtn.disabled = true;
+            }
+        } catch (err) {
+            console.warn('Auto-detect post URL failed:', err);
+            if (noPostMessage) noPostMessage.style.display = 'flex';
+        }
+    }
+
+    autoDetectPostUrl();
+
     // ─── Tweet Scraping via Content Script ────────────────────────────────────
     /**
      * Extracts tweet text from the active X/Twitter tab by injecting a script.
@@ -311,10 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ─── Generator Logic ─────────────────────────────────────────────────────
     generateBtn?.addEventListener('click', async () => {
         const postUrl = urlInput.value.trim();
-        if (!postUrl) {
-            alert('Please enter a valid X post link');
-            return;
-        }
+        if (!postUrl) return; // Safety guard — button should already be disabled
 
         const tone         = toneSelect?.value           || 'professional';
         const numVariations = parseInt(variationsSlider?.value || '3', 10);

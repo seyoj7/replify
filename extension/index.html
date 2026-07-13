@@ -37,11 +37,15 @@
                 <h2 class="font-label-md section-title" style="margin-bottom: 12px;">Generate Replies</h2>
                 <div class="form-group" style="margin-bottom: 16px;">
                     <label class="font-label-sm" for="x-post-url" style="display: block; margin-bottom: 8px;">X (Twitter) Post Link</label>
-                    <input type="url" id="x-post-url" class="font-body-sm text-input" placeholder="https://x.com/username/status/..." style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--outline-variant); background-color: var(--surface-container); color: var(--on-surface); box-sizing: border-box; outline: none; transition: border-color 0.2s;" />
+                    <input type="url" id="x-post-url" class="font-body-sm text-input" readonly placeholder="Open a post on X to auto-detect..." style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--outline-variant); background-color: var(--surface-container); color: var(--on-surface); box-sizing: border-box; outline: none; transition: border-color 0.2s; cursor: default;" />
+                    <div id="no-post-message" class="no-post-message font-label-sm" style="display: none;">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">info</span>
+                        Navigate to a post on X, then open Replify
+                    </div>
                 </div>
                 
                 <div class="action-button-container">
-                    <button id="generate-btn" class="action-button font-label-md" style="width: 100%;">
+                    <button id="generate-btn" class="action-button font-label-md" style="width: 100%;" disabled>
                         <span class="material-symbols-outlined">auto_awesome</span>
                         Generate Replies
                     </button>

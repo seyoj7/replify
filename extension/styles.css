@@ -662,3 +662,56 @@ input:checked+.toggle-bg .toggle-thumb {
 .history-session {
     animation: fadeInUp 0.2s ease forwards;
 }
+
+/* ─── Auto-Detect Badge ──────────────────────────────────────────────────── */
+.auto-detect-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    background: rgba(16, 151, 235, 0.12);
+    color: var(--primary);
+    width: fit-content;
+    animation: fadeInUp 0.3s ease forwards;
+    transition: opacity 0.4s ease;
+}
+
+.text-input.auto-detected {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px rgba(16, 151, 235, 0.18);
+}
+
+/* ─── No Post Detected Message ───────────────────────────────────────────── */
+.no-post-message {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 170, 51, 0.10);
+    color: #ffaa33;
+    width: fit-content;
+    animation: fadeInUp 0.3s ease forwards;
+}
+
+/* ─── Readonly Input ─────────────────────────────────────────────────────── */
+.text-input[readonly] {
+    opacity: 0.6;
+    cursor: default;
+    user-select: none;
+}
+
+.text-input[readonly]:focus {
+    border-color: var(--outline-variant) !important;
+    box-shadow: none !important;
+}
+
+/* ─── Disabled Generate Button ───────────────────────────────────────────── */
+.action-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
