@@ -111,8 +111,9 @@ async def generate_replies(request: GenerateRepliesRequest):
         "max_tokens": 512,
     }
 
-    # Retry up to 3 times for transient failures (timeouts, rate limits)
+    # Retry up to 3 times for transient failures (timeouts, DNS, rate limits)
     max_retries = 3
+    last_error = None
     for attempt in range(max_retries):
         try:
             response = await http_client.post(
@@ -129,14 +130,20 @@ async def generate_replies(request: GenerateRepliesRequest):
             response.raise_for_status()
             data = response.json()
             break  # Success — exit retry loop
-        except httpx.ReadTimeout:
+        except (httpx.ReadTimeout, httpx.ConnectError, httpx.ConnectTimeout) as e:
+            last_error = e
             if attempt < max_retries - 1:
-                print(f"[WARN] ReadTimeout, retrying (attempt {attempt + 1}/{max_retries})")
+                wait = (attempt + 1) * 2  # 2s, 4s backoff
+                print(f"[WARN] {type(e).__name__}, retrying in {wait}s (attempt {attempt + 2}/{max_retries})")
+                await asyncio.sleep(wait)
                 continue
-            raise  # Final attempt failed — let outer handler catch it
+            print(f"[ERROR] {type(e).__name__} after {max_retries} attempts: {str(e)}")
+            raise HTTPException(status_code=504, detail=f"Could not reach NVIDIA API after {max_retries} attempts: {type(e).__name__}")
+        except httpx.HTTPStatusError as e:
+            print(f"[ERROR] NVIDIA API returned {e.response.status_code}: {e.response.text}")
+            raise HTTPException(status_code=e.response.status_code, detail=f"NVIDIA API Error: {e.response.text}")
 
     try:
-            
         # Extract content from the LLM response
         content = data["choices"][0]["message"]["content"].strip()
         
@@ -161,9 +168,6 @@ async def generate_replies(request: GenerateRepliesRequest):
         # Ensure we return exactly the requested number of variations
         return GenerateRepliesResponse(replies=replies[:request.num_variations])
 
-    except httpx.HTTPStatusError as e:
-        print(f"[ERROR] NVIDIA API returned {e.response.status_code}: {e.response.text}")
-        raise HTTPException(status_code=e.response.status_code, detail=f"NVIDIA API Error: {e.response.text}")
     except Exception as e:
         traceback.print_exc()
         print(f"[ERROR] Unexpected error: {type(e).__name__}: {str(e)}")
