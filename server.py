@@ -11,6 +11,20 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
+import logging
+
+class Filter404Logs(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if hasattr(record, "args") and len(record.args) >= 5:
+            try:
+                # uvicorn.access args: (client_addr, method, full_path, http_version, status_code)
+                if int(record.args[4]) == 404:
+                    return False
+            except (ValueError, TypeError):
+                pass
+        return True
+
+logging.getLogger("uvicorn.access").addFilter(Filter404Logs())
 
 load_dotenv()
 
